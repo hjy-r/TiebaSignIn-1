@@ -123,6 +123,7 @@ public class Run {
         try {
             JSONObject jsonObject = Request.get(LIKE_URL);
             LOGGER.info("获取贴吧列表成功");
+            LOGGER.info("原始响应JSON: {}", jsonObject.toJSONString());
 
             JSONArray jsonArray = null;
             try {
