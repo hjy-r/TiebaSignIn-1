@@ -35,9 +35,9 @@ public class Run {
     private static final Logger LOGGER = LoggerFactory.getLogger(Run.class);
 
     /**
-     * 获取用户所有关注贴吧 - PC端接口，支持分页
+     * 获取用户所有关注贴吧 - 移动端接口
      */
-    String LIKE_URL = "https://tieba.baidu.com/favForum";
+    String LIKE_URL = "https://tieba.baidu.com/mo/q/newmoindex";
     /**
      * 获取用户的tbs
      */
@@ -114,96 +114,51 @@ public class Run {
     }
 
     /**
-     * 获取用户所关注的贴吧列表 - 支持分页获取，突破200个限制
+     * 获取用户所关注的贴吧列表
      *
      * @author srcrs
      * @Time 2020-10-31
      */
     public void getFollow() {
         try {
-            int page = 1;
-            int perPage = 50;
-            boolean hasMore = true;
-            
-            while (hasMore) {
-                String pageUrl = LIKE_URL + "?pn=" + page + "&rn=" + perPage;
-                JSONObject jsonObject = Request.get(pageUrl);
-                
-                LOGGER.info("获取第 {} 页贴吧列表", page);
-                
-                JSONArray jsonArray = null;
+            JSONObject jsonObject = Request.get(LIKE_URL);
+            LOGGER.info("获取贴吧列表成功");
+
+            JSONArray jsonArray = null;
+            try {
+                jsonArray = jsonObject.getJSONObject("data").getJSONArray("thread_list");
+            } catch (Exception e) {
                 try {
-                    jsonArray = jsonObject.getJSONObject("data").getJSONArray("thread_list");
-                } catch (Exception e) {
-                    try {
-                        jsonArray = jsonObject.getJSONObject("data").getJSONArray("forum_list");
-                    } catch (Exception e2) {
-                        jsonArray = jsonObject.getJSONObject("data").getJSONArray("like_forum");
-                    }
-                }
-                
-                if (jsonArray == null || jsonArray.isEmpty()) {
-                    hasMore = false;
-                    break;
-                }
-                
-                followNum += jsonArray.size();
-                
-                for (Object array : jsonArray) {
-                    String tiebaName = null;
-                    try {
-                        tiebaName = ((JSONObject) array).getString("forum_name");
-                    } catch (Exception e) {
-                        tiebaName = ((JSONObject) array).getString("name");
-                    }
-                    
-                    if (tiebaName == null) continue;
-                    
-                    String isSign = "0";
-                    try {
-                        isSign = ((JSONObject) array).getString("is_sign");
-                    } catch (Exception e) {}
-                    
-                    if ("0".equals(isSign)) {
-                        follow.add(tiebaName.replace("+", "%2B"));
-                        if (Request.isTiebaNotExist(tiebaName)) {
-                            follow.remove(tiebaName);
-                            invalid.add(tiebaName);
-                            failed.add(tiebaName);
-                        }
-                    } else {
-                        success.add(tiebaName);
-                    }
-                }
-                
-                if (jsonArray.size() < perPage) {
-                    hasMore = false;
-                } else {
-                    page++;
-                    Thread.sleep(500);
+                    jsonArray = jsonObject.getJSONObject("data").getJSONArray("forum_list");
+                } catch (Exception e2) {
+                    jsonArray = jsonObject.getJSONObject("data").getJSONArray("like_forum");
                 }
             }
-            
-            LOGGER.info("获取贴吧列表成功，共 {} 个贴吧", follow.size() + success.size());
-            
+
+            followNum = jsonArray.size();
+            for (Object array : jsonArray) {
+                String tiebaName = null;
+                try {
+                    tiebaName = ((JSONObject) array).getString("forum_name");
+                } catch (Exception e) {
+                    tiebaName = ((JSONObject) array).getString("name");
+                }
+
+                if (tiebaName == null) continue;
+
+                if ("0".equals(((JSONObject) array).getString("is_sign"))) {
+                    follow.add(tiebaName.replace("+", "%2B"));
+                    if (Request.isTiebaNotExist(tiebaName)) {
+                        follow.remove(tiebaName);
+                        invalid.add(tiebaName);
+                        failed.add(tiebaName);
+                    }
+                } else {
+                    success.add(tiebaName);
+                }
+            }
         } catch (Exception e) {
             LOGGER.error("获取贴吧列表部分出现错误 -- " + e);
-            try {
-                JSONObject jsonObject = Request.get(LIKE_URL);
-                LOGGER.info("使用后备方式获取贴吧列表");
-                JSONArray jsonArray = jsonObject.getJSONObject("data").getJSONArray("like_forum");
-                followNum = jsonArray.size();
-                for (Object array : jsonArray) {
-                    String tiebaName = ((JSONObject) array).getString("forum_name");
-                    if ("0".equals(((JSONObject) array).getString("is_sign"))) {
-                        follow.add(tiebaName.replace("+", "%2B"));
-                    } else {
-                        success.add(tiebaName);
-                    }
-                }
-            } catch (Exception e2) {
-                LOGGER.error("后备方式也失败 -- " + e2);
-            }
         }
     }
 
