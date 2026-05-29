@@ -123,18 +123,8 @@ public class Run {
         try {
             JSONObject jsonObject = Request.get(LIKE_URL);
             LOGGER.info("获取贴吧列表成功");
-            LOGGER.info("原始响应JSON: {}", jsonObject.toJSONString());
 
-            JSONArray jsonArray = null;
-            try {
-                jsonArray = jsonObject.getJSONObject("data").getJSONArray("thread_list");
-            } catch (Exception e) {
-                try {
-                    jsonArray = jsonObject.getJSONObject("data").getJSONArray("forum_list");
-                } catch (Exception e2) {
-                    jsonArray = jsonObject.getJSONObject("data").getJSONArray("like_forum");
-                }
-            }
+            JSONArray jsonArray = jsonObject.getJSONObject("data").getJSONArray("like_forum");
 
             followNum = jsonArray.size();
             for (Object array : jsonArray) {
