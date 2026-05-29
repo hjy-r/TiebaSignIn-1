@@ -75,6 +75,7 @@ public class Request {
         if (respContent == null) {
             return new JSONObject();
         }
+        LOGGER.info("get原始响应(前500字符): {}", respContent.length() > 500 ? respContent.substring(0, 500) : respContent);
         return JSONObject.parseObject(respContent);
     }
 
